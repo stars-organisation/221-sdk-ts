@@ -1,6 +1,6 @@
 // node examples/premier-appel.mjs (after npm run build; API_KEY and API_URL optional)
-import { createApiClient } from '@221/sdk';
-import { places } from '@221/sdk/offline';
+import { createApiClient } from '@orvlabs/sdk-221';
+import { places } from '@orvlabs/sdk-221/offline';
 
 const api = createApiClient({ apiKey: process.env.API_KEY, baseUrl: process.env.API_URL });
 const { data, error, response } = await api.GET('/v1/jours-feries', { params: { query: { year: '2026' } } });

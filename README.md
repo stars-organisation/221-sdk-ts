@@ -8,23 +8,23 @@ le résultat.
 
 | Import | Contenu | Origine |
 | --- | --- | --- |
-| `@221/sdk` | `createApiClient()` : toutes les routes de l'OpenAPI, typées | Types générés par [openapi-typescript](https://openapi-ts.dev/), client [openapi-fetch](https://openapi-ts.dev/openapi-fetch/) |
-| `@221/sdk/webhook` | `verifyWebhook()` : signature `X-221-Signature` d'un webhook | `node:crypto` (HMAC-SHA256, comparaison à temps constant) |
-| `@221/sdk/offline` | `holidays`, `holiday`, `operatorFor`, `banks`, `bank`, `places`, `place`, `snapshot` | Instantané versionné de `server/data.json` (jours fériés, préfixes, banques, géographie jusqu'à la commune) |
-| `@221/sdk/telephonie` | `analysePhone()` : validation +221, formats, opérateur d'origine | libphonenumber-js, même règle que `GET /v1/telephone/analyse` ; n'embarque que les préfixes d'opérateurs, pas tout l'instantané |
-| `@221/sdk/monnaie` | `formatAmount()` : « 1 250 000 FCFA », en lettres, en euros | n2words, même règle que `GET /v1/monnaie/format` |
+| `@orvlabs/sdk-221` | `createApiClient()` : toutes les routes de l'OpenAPI, typées | Types générés par [openapi-typescript](https://openapi-ts.dev/), client [openapi-fetch](https://openapi-ts.dev/openapi-fetch/) |
+| `@orvlabs/sdk-221/webhook` | `verifyWebhook()` : signature `X-221-Signature` d'un webhook | `node:crypto` (HMAC-SHA256, comparaison à temps constant) |
+| `@orvlabs/sdk-221/offline` | `holidays`, `holiday`, `operatorFor`, `banks`, `bank`, `places`, `place`, `snapshot` | Instantané versionné de `server/data.json` (jours fériés, préfixes, banques, géographie jusqu'à la commune) |
+| `@orvlabs/sdk-221/telephonie` | `analysePhone()` : validation +221, formats, opérateur d'origine | libphonenumber-js, même règle que `GET /v1/telephone/analyse` ; n'embarque que les préfixes d'opérateurs, pas tout l'instantané |
+| `@orvlabs/sdk-221/monnaie` | `formatAmount()` : « 1 250 000 FCFA », en lettres, en euros | n2words, même règle que `GET /v1/monnaie/format` |
 
 ## Installation
 
 ```sh
-npm install @221/sdk
+npm install @orvlabs/sdk-221
 ```
 
 Pas encore publié sur npm : la commande fonctionnera à la publication.
 
 ## Développement
 
-`packages/` est un espace de travail npm (`sdk-ts`, `mcp`) : `@221/sdk` y est
+`packages/` est un espace de travail npm (`sdk-ts`, `mcp`) : `@orvlabs/sdk-221` y est
 résolu en local, sans registre.
 
 ```sh
@@ -46,7 +46,7 @@ Les clés déjà émises avec `221pay_test_`, `221pay_live_` ou `sk_221_` resten
 le navigateur.
 
 ```ts
-import { createApiClient } from '@221/sdk';
+import { createApiClient } from '@orvlabs/sdk-221';
 
 const api = createApiClient({ apiKey: process.env.API_KEY }); // sans baseUrl : https://apps.orvlabs.com
 ```
@@ -81,7 +81,7 @@ fonction renvoie `false` (signature fausse, ou horodatage de plus de 5 minutes,
 `maxAgeSeconds` pour changer la durée).
 
 ```ts
-import { verifyWebhook } from '@221/sdk/webhook';
+import { verifyWebhook } from '@orvlabs/sdk-221/webhook';
 
 // Express : app.post('/webhooks/221', express.raw({ type: 'application/json' }), (req, res) => …)
 const ok = verifyWebhook(process.env.WEBHOOK_SECRET!, req.header('X-221-Timestamp') ?? '', req.body, req.header('X-221-Signature') ?? '');
@@ -93,7 +93,7 @@ Dédupliquez sur l'identifiant de l'événement : une livraison peut être rejou
 ## Premier appel, sans clé
 
 ```ts
-import type { JourFerie } from '@221/sdk/offline';
+import type { JourFerie } from '@orvlabs/sdk-221/offline';
 
 const { data } = await api.GET('/v1/jours-feries', { params: { query: { year: '2026' } } });
 console.log((data?.data as JourFerie[])[0]?.name.fr); // « Jour de l'an »
@@ -121,9 +121,9 @@ Ne relancez pas un 429 en boucle : attendez `Retry-After` secondes.
 ## Hors ligne
 
 ```ts
-import { holidays, operatorFor, place, snapshot } from '@221/sdk/offline';
-import { analysePhone } from '@221/sdk/telephonie';
-import { formatAmount } from '@221/sdk/monnaie';
+import { holidays, operatorFor, place, snapshot } from '@orvlabs/sdk-221/offline';
+import { analysePhone } from '@orvlabs/sdk-221/telephonie';
+import { formatAmount } from '@orvlabs/sdk-221/monnaie';
 
 holidays(2026);                  // jours fériés de l'année (date_status : confirmee ou previsionnelle) ; RangeError hors des années embarquées
 analysePhone('+221 70 123 45 67'); // même réponse que l'API ; null si ce n'est pas un numéro
