@@ -1,0 +1,34 @@
+{
+  "name": "@221/sdk",
+  "version": "0.2.0",
+  "description": "SDK TypeScript de l'API 221 : client typé, vérification des webhooks, données de référence hors ligne.",
+  "license": "Apache-2.0",
+  "homepage": "https://221.orvlabs.com/documentation",
+  "repository": { "type": "git", "url": "git+https://github.com/stars-organisation/221-sdk-ts.git" },
+  "keywords": ["senegal", "221", "api", "sdk", "wave", "orange-money", "mobile-money", "fcfa", "jours-feries", "telephone"],
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.js",
+    "./offline": "./dist/offline.js",
+    "./telephonie": "./dist/telephonie.js",
+    "./monnaie": "./dist/monnaie.js",
+    "./webhook": "./dist/webhook.js"
+  },
+  "files": ["dist", "LICENSE"],
+  "scripts": {
+    "generate": "node ../scripts/sync.mjs && openapi-typescript ../openapi.json -o src/generated/api.ts",
+    "build": "rm -rf dist && tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "libphonenumber-js": "1.13.14",
+    "n2words": "6.2.0",
+    "openapi-fetch": "0.17.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.19.19",
+    "openapi-typescript": "7.13.0",
+    "typescript": "5.9.3",
+    "vitest": "4.1.11"
+  }
+}
