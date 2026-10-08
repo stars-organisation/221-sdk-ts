@@ -27,7 +27,7 @@ describe('client against the local API', () => {
 	it('returns typed errors', async () => {
 		const missing = await api.GET('/v1/banques/{id}', { params: { path: { id: 'inconnue' } } });
 		expect(missing.response.status).toBe(404);
-		expect(missing.error?.error.code).toBe('not_found');
+		expect(missing.error?.code).toBe('NOT_FOUND');
 		const badKey = await createApiClient({ baseUrl: process.env.API_URL, apiKey: 'cle-invalide' }).GET('/v1/categories');
 		expect(badKey.response.status).toBe(401);
 	});

@@ -1,6 +1,6 @@
 {
   "name": "@orvlabs/sdk-221",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "SDK TypeScript de l'API 221 : client typé, vérification des webhooks, données de référence hors ligne.",
   "license": "Apache-2.0",
   "homepage": "https://221.orvlabs.com/documentation",

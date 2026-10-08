@@ -407,6 +407,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/fees": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["feesGet"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/geographie": {
         parameters: {
             query?: never;
@@ -467,6 +483,23 @@ export interface paths {
         };
         /** Un lieu avec ses ancêtres et ses enfants */
         get: operations["getLieu"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/invitations/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Aperçu public d'une invitation : projet, rôle, adresse masquée, état */
+        get: operations["previewInvitation"];
         put?: never;
         post?: never;
         delete?: never;
@@ -722,6 +755,23 @@ export interface paths {
         post?: never;
         /** Retirer un jeu de mes abonnements aux nouvelles versions (e-mail) (idempotent) */
         delete: operations["removeAbonnement"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/moi/cle": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Projet, mode et portées de la clé API qui appelle */
+        get: operations["getCleAppelante"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1043,6 +1093,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/payout-destinations/{id}/resend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["payoutDestinationsResend"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/payout-destinations/{id}/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["payoutDestinationsVerify"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/payout-quotes": {
         parameters: {
             query?: never;
@@ -1083,6 +1165,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["payoutsGet"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/payouts/{id}/receipt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["payoutsReceipt"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1300,6 +1398,23 @@ export interface paths {
         head?: never;
         /** Choisir les événements et les modes d’un point de terminaison webhook */
         patch: operations["updateWebhook"];
+        trace?: never;
+    };
+    "/v1/projets/{id}/webhooks/{subscriptionId}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Envoyer un événement test.ping signé au point de terminaison (3 par minute au plus) */
+        post: operations["testWebhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v1/rails": {
@@ -1619,18 +1734,29 @@ export interface components {
         AdresseNormalisee: {
             alternatives: components["schemas"]["LieuResume"][] | null;
             ambigu: boolean;
-            lieu: components["schemas"]["LieuResume"];
+            lieu: components["schemas"]["LieuResume"] | null;
             lieu_id: string | null;
             lieux_reconnus: components["schemas"]["Recognised"][] | null;
             limites: string;
-            /** @enum {string|null} */
-            relation: "en_face_de" | "derriere" | "a_cote_de" | "pres_de" | null;
+            /** @description en_face_de, derriere, a_cote_de ou pres_de ; null si aucune relation n'est reconnue. */
+            relation: string | null;
             /** @example pharmacie Guigon */
             repere: string | null;
             texte: string;
         };
         AnswerInputBody: {
             answer: string;
+        };
+        ApercuInvitation: {
+            /** @example f***@example.test */
+            email_masked: string;
+            /** Format: date-time */
+            expires_at: string;
+            project_name: string;
+            /** @enum {string} */
+            role: "admin" | "user" | "read_only";
+            /** @enum {string} */
+            status: "pending" | "used" | "expired";
         };
         AppelJournal: {
             /** Format: date-time */
@@ -1659,6 +1785,24 @@ export interface components {
                 [key: string]: components["schemas"]["RailBalance"];
             };
         };
+        BankTier: {
+            /**
+             * Format: int64
+             * @description Taux appliqué au montant entier, en points de base.
+             * @example 500
+             */
+            bps: number;
+            /**
+             * Format: int64
+             * @example 200000
+             */
+            from: number;
+            /**
+             * Format: int64
+             * @example 499999
+             */
+            to: number;
+        };
         Banque: {
             /**
              * @description Code d'agrément BCEAO.
@@ -1684,29 +1828,36 @@ export interface components {
              * Format: date-time
              * @description Désactivation par un administrateur (usage abusif).
              */
-            disabled_at: string;
+            disabled_at: string | null;
             disabled_reason: string | null;
             /**
              * Format: date-time
              * @description Fin de validité ; null : sans expiration.
              */
-            expires_at: string;
+            expires_at: string | null;
             id: string;
             /** Format: date-time */
-            last_used_at: string;
+            last_used_at: string | null;
             /**
              * @description test : aucun argent réel ; live : argent réel.
              * @enum {string}
              */
             mode: "test" | "live";
             name: string;
-            /** @example 221pay_test_k3m9x2p */
+            /** @example sk_221_pay_test_k3m9x2p */
             prefix: string;
             /** Format: date-time */
-            revoked_at: string;
+            revoked_at: string | null;
             /** @description Clé remplacée par celle-ci lors d'une rotation ; null sinon. */
             rotated_from: string | null;
             /** @description Produits que la clé peut appeler : payments, data. */
+            scopes: string[] | null;
+        };
+        CleAppelante: {
+            /** @enum {string} */
+            mode: "test" | "live";
+            name: string;
+            project_id: string;
             scopes: string[] | null;
         };
         CleCreee: {
@@ -1718,26 +1869,26 @@ export interface components {
              * Format: date-time
              * @description Désactivation par un administrateur (usage abusif).
              */
-            disabled_at: string;
+            disabled_at: string | null;
             disabled_reason: string | null;
             /**
              * Format: date-time
              * @description Fin de validité ; null : sans expiration.
              */
-            expires_at: string;
+            expires_at: string | null;
             id: string;
             /** Format: date-time */
-            last_used_at: string;
+            last_used_at: string | null;
             /**
              * @description test : aucun argent réel ; live : argent réel.
              * @enum {string}
              */
             mode: "test" | "live";
             name: string;
-            /** @example 221pay_test_k3m9x2p */
+            /** @example sk_221_pay_test_k3m9x2p */
             prefix: string;
             /** Format: date-time */
-            revoked_at: string;
+            revoked_at: string | null;
             /** @description Clé remplacée par celle-ci lors d'une rotation ; null sinon. */
             rotated_from: string | null;
             /** @description Produits que la clé peut appeler : payments, data. */
@@ -1799,9 +1950,9 @@ export interface components {
              * @description Date du premier paiement.
              */
             created_at: string;
-            /** @description Le numéro de téléphone : un client n'est pas stocké, c'est l'ensemble des paiements d'un même numéro. */
-            customer_id: string;
             email: string | null;
+            /** @description Le numéro de téléphone : un client n'est pas stocké, c'est l'ensemble des paiements d'un même numéro. */
+            id: string;
             /** @description true : objet du mode live ; false : mode test. */
             livemode: boolean;
             name: string | null;
@@ -1868,6 +2019,25 @@ export interface components {
         DemandeListe: {
             data: components["schemas"]["Demande"][] | null;
         };
+        DestinationCodeRequest: {
+            /**
+             * @description Code à 6 chiffres reçu par e-mail par le propriétaire du compte.
+             * @example 123456
+             */
+            code: string;
+        };
+        DestinationVerification: {
+            /**
+             * Format: int64
+             * @example 5
+             */
+            attempts_left: number;
+            /**
+             * Format: date-time
+             * @description Fin de validité du dernier code envoyé (10 minutes).
+             */
+            expires_at: string;
+        };
         Dispute: {
             /**
              * @description Montant en francs CFA entiers (XOF), écrit en chaîne de chiffres, sans espace ni décimale.
@@ -1883,17 +2053,13 @@ export interface components {
             created_at: string;
             /** @enum {string} */
             currency: "XOF";
+            /** @description Pièces jointes ; absent des listes. */
+            evidence?: components["schemas"]["DisputeEvidence"][];
             /**
              * Format: uuid
              * @example 0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10
              */
-            dispute_id: string;
-            /** @enum {string} */
-            dispute_stage: "pre_dispute" | "dispute";
-            /** @enum {string} */
-            dispute_status: "opened" | "under_review" | "challenged" | "accepted" | "won" | "lost";
-            /** @description Pièces jointes ; absent des listes. */
-            evidence?: components["schemas"]["DisputeEvidence"][];
+            id: string;
             is_already_refunded: boolean;
             /** @description true : objet du mode live ; false : mode test. */
             livemode: boolean;
@@ -1909,6 +2075,10 @@ export interface components {
             project_id: string;
             /** @enum {string} */
             reason: "not_received" | "not_as_described" | "unauthorized" | "duplicate" | "other_documented";
+            /** @enum {string} */
+            stage: "pre_dispute" | "dispute";
+            /** @enum {string} */
+            status: "opened" | "under_review" | "challenged" | "accepted" | "won" | "lost";
             /** Format: date-time */
             updated_at: string;
         };
@@ -1921,12 +2091,12 @@ export interface components {
             created_at: string;
             /** @enum {string} */
             evidence_type: "receipt" | "delivery_proof" | "customer_communication" | "other";
+            file_name: string;
             /**
              * Format: uuid
              * @example 0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10
              */
-            file_id: string;
-            file_name: string;
+            id: string;
             /**
              * Format: int32
              * @description Octets.
@@ -1938,7 +2108,7 @@ export interface components {
              * Format: uuid
              * @example 0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10
              */
-            file_id: string;
+            id: string;
             /** @description true : objet du mode live ; false : mode test. */
             livemode: boolean;
         };
@@ -1984,23 +2154,66 @@ export interface components {
             methode: "vol_oiseau";
             to: components["schemas"]["Extremite"];
         };
-        Error: {
-            error: components["schemas"]["ErrorBody"];
+        EnvoiTest: {
+            /** @description true si le récepteur a répondu 2xx. */
+            delivered: boolean;
+            /** @description Cause technique quand le récepteur n'a pas répondu. */
+            error?: string;
+            /** @example test.ping */
+            event: string;
+            /** @description true si le point de terminaison ne reçoit que le mode live. */
+            livemode: boolean;
+            /**
+             * Format: int64
+             * @description Code HTTP du récepteur ; null s'il n'a pas répondu.
+             */
+            status: number | null;
         };
-        ErrorBody: {
-            /** @example not_found */
+        Error: {
+            /** @example NOT_FOUND */
             code: string;
-            details: unknown;
+            /** @description Un message par champ refusé. */
+            fields?: {
+                [key: string]: string;
+            };
             message: string;
+            /** @description Identifiant de la requête, aussi dans l'en-tête X-Request-Id : à donner au support. */
+            request_id: string;
+        } & {
+            [key: string]: unknown;
         };
         Extremite: {
             entree: string;
             /** Format: double */
             lat: number;
-            lieu: components["schemas"]["LieuResume"];
+            lieu: components["schemas"]["LieuResume"] | null;
             /** Format: double */
             lon: number;
             precision: string;
+        };
+        Fees: {
+            /**
+             * Format: int64
+             * @description Montant maximum d'un virement bancaire, en XOF.
+             * @example 5000000
+             */
+            bank_max: number;
+            /**
+             * Format: int64
+             * @description Montant minimum d'un virement bancaire, en XOF.
+             * @example 200000
+             */
+            bank_min: number;
+            /**
+             * Format: int64
+             * @description Virements bancaires par marchand et par mois calendaire (heure de Dakar), en XOF.
+             * @example 10000000
+             */
+            bank_monthly_cap: number;
+            /** @description Paliers des virements bancaires : le palier du montant entier donne le taux. EN: bank transfer tiers; the whole amount's tier gives the rate. */
+            bank_tiers: components["schemas"]["BankTier"][];
+            /** @description true : objet du mode live ; false : mode test. */
+            livemode: boolean;
         };
         Geocodage: {
             alternatives: components["schemas"]["LieuResume"][] | null;
@@ -2008,12 +2221,12 @@ export interface components {
             avertissements: string[] | null;
             /** Format: double */
             lat: number | null;
-            lieu: components["schemas"]["LieuResume"];
+            lieu: components["schemas"]["LieuResume"] | null;
             /** Format: double */
             lon: number | null;
             precision: string | null;
-            /** @enum {string|null} */
-            relation: "en_face_de" | "derriere" | "a_cote_de" | "pres_de" | null;
+            /** @description en_face_de, derriere, a_cote_de ou pres_de ; null si aucune relation n'est reconnue. */
+            relation: string | null;
             repere: string | null;
             sources: components["schemas"]["Source"][] | null;
             texte: string;
@@ -2149,8 +2362,8 @@ export interface components {
             /** @description Renseigné quand la vérification est pending. */
             verification_id: string | null;
             withdrawals_blocked: boolean;
-            /** @enum {string|null} */
-            withdrawals_blocked_reason: "merchant_suspended" | "kyc_required" | null;
+            /** @description merchant_suspended ou kyc_required ; null si les retraits sont autorisés. */
+            withdrawals_blocked_reason: string | null;
         };
         Lieu: {
             id: string;
@@ -2237,6 +2450,15 @@ export interface components {
             words: string;
         };
         NextAction: {
+            /** @description sn_orange en QR : liens d'ouverture directe dans les apps, clés MAXIT et OM. EN: sn_orange QR: links opening the apps directly, keys MAXIT and OM. */
+            deep_links?: {
+                [key: string]: string;
+            };
+            /**
+             * Format: date-time
+             * @description sn_orange en QR : fin de validité du QR code (5 minutes) ; la page de paiement 221 Pay en propose ensuite un nouveau. EN: sn_orange QR: end of the QR code's validity (5 minutes); the 221 Pay payment page then offers a new one.
+             */
+            expires_at?: string;
             /** @description Consigne à afficher (type instruction). */
             message?: string;
             /** @description Code à scanner (type qr). */
@@ -2303,6 +2525,11 @@ export interface components {
             description: string;
             /** Format: date-time */
             end_time: string | null;
+            /**
+             * Format: uuid
+             * @example 0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10
+             */
+            id: string;
             /** @description true : objet du mode live ; false : mode test. */
             livemode: boolean;
             /**
@@ -2316,11 +2543,6 @@ export interface components {
              */
             min_order_amount: string | null;
             offer_code: string;
-            /**
-             * Format: uuid
-             * @example 0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10
-             */
-            offer_id: string;
             /** Format: date-time */
             start_time: string | null;
             /**
@@ -2445,10 +2667,15 @@ export interface components {
         };
         PayError: {
             /**
+             * Format: int64
+             * @description INVALID_CODE : essais restants pour ce code.
+             */
+            attempts_left?: number;
+            /**
              * @description Code applicatif stable. La liste des codes possibles est donnée par chaque réponse d'erreur.
              * @enum {string}
              */
-            code: "CHANNEL_UNAVAILABLE" | "DUPLICATE_MERCHANT_REFERENCE" | "FEATURE_DISABLED" | "FORBIDDEN" | "IDEMPOTENCY_CONFLICT" | "INSUFFICIENT_FUNDS" | "INVALID_API_KEY" | "INVALID_REQUEST" | "INVALID_STATE" | "KYC_ALREADY_SUBMITTED" | "KYC_REQUIRED" | "LIVE_NOT_ENABLED" | "MERCHANT_LIMIT_EXCEEDED" | "MERCHANT_SUSPENDED" | "MISSING_CAPTURES" | "MISSING_SCOPE" | "NOT_CONFIGURED" | "NOT_FOUND" | "OFFER_CODE_TAKEN" | "OFFER_INVALID" | "PAYMENTS_UNAVAILABLE" | "PROJECT_REQUIRED" | "RATE_LIMITED" | "STORAGE_FULL" | "UNAUTHENTICATED";
+            code: "ABOVE_MAXIMUM" | "BELOW_MINIMUM" | "CHANNEL_UNAVAILABLE" | "CODE_EXPIRED" | "DESTINATION_NOT_VERIFIED" | "DUPLICATE_MERCHANT_REFERENCE" | "FEATURE_DISABLED" | "FORBIDDEN" | "IDEMPOTENCY_CONFLICT" | "INSUFFICIENT_FUNDS" | "INTERNAL_ERROR" | "INVALID_API_KEY" | "INVALID_CODE" | "INVALID_REQUEST" | "INVALID_STATE" | "KYC_ALREADY_SUBMITTED" | "KYC_REQUIRED" | "LIVE_NOT_ENABLED" | "MERCHANT_LIMIT_EXCEEDED" | "MERCHANT_SUSPENDED" | "MISSING_CAPTURES" | "MISSING_SCOPE" | "MONTHLY_LIMIT_REACHED" | "NOT_CONFIGURED" | "NOT_FOUND" | "OFFER_CODE_TAKEN" | "OFFER_INVALID" | "PAYMENTS_UNAVAILABLE" | "PROJECT_REQUIRED" | "QUOTE_EXPIRED" | "QUOTE_INVALID" | "RATE_LIMITED" | "REQUEST_TOO_LARGE" | "STORAGE_FULL" | "TOO_MANY_ATTEMPTS" | "UNAUTHENTICATED" | "WITHDRAWAL_LIMIT_EXCEEDED";
             /** @description Un message par champ refusé du corps de la requête. */
             fields?: {
                 [key: string]: string;
@@ -2462,14 +2689,19 @@ export interface components {
             kyc_status?: "not_started" | "pending" | "rejected";
             /**
              * Format: int64
-             * @description MERCHANT_LIMIT_EXCEEDED : valeur du plafond en XOF.
+             * @description Valeur de la limite : en XOF, ou en nombre de retraits pour daily_count.
              */
             limit?: number;
             /**
-             * @description MERCHANT_LIMIT_EXCEEDED : plafond atteint.
+             * @description MERCHANT_LIMIT_EXCEEDED (daily, monthly) ou WITHDRAWAL_LIMIT_EXCEEDED (les autres) : limite atteinte.
              * @enum {string}
              */
-            limit_type?: "daily" | "monthly";
+            limit_type?: "daily" | "monthly" | "per_withdrawal" | "daily_count" | "daily_amount" | "monthly_amount";
+            /**
+             * Format: int64
+             * @description BELOW_MINIMUM, ABOVE_MAXIMUM : montant maximum d'un virement bancaire, en XOF.
+             */
+            max_amount?: number;
             /**
              * @description MERCHANT_SUSPENDED : état du compte.
              * @enum {string}
@@ -2477,8 +2709,18 @@ export interface components {
             merchant_status?: "suspended" | "closed";
             /** @description Message lisible, en français ou en anglais selon ?lang ou Accept-Language. */
             message: string;
+            /**
+             * Format: int64
+             * @description BELOW_MINIMUM, ABOVE_MAXIMUM : montant minimum d'un virement bancaire, en XOF.
+             */
+            min_amount?: number;
             /** @description MISSING_CAPTURES : photos encore à envoyer. */
             missing?: string[];
+            /**
+             * Format: int64
+             * @description MONTHLY_LIMIT_REACHED : virements bancaires encore possibles ce mois, en XOF.
+             */
+            remaining?: number;
             /**
              * Format: uuid
              * @description Identifiant de la requête, aussi dans l'en-tête X-Request-Id : à donner au support.
@@ -2520,12 +2762,6 @@ export interface components {
             livemode: boolean;
             merchant_reference: string;
             /**
-             * @deprecated
-             * @description Présent seulement pour sn_wave et sn_orange. Utilisez rail.
-             * @enum {string}
-             */
-            method?: "wave" | "orange";
-            /**
              * @description Montant crédité au marchand ; null tant que le paiement n'est pas confirmé.
              * @example 2500
              */
@@ -2539,6 +2775,8 @@ export interface components {
              * @example 2500
              */
             original_amount?: string | null;
+            /** @description Présent pour un paiement fait sur un lien de paiement : la description du lien, à afficher à la place de merchant_reference (link:…). EN: present for a payment made on a payment link: the link's description, to show instead of merchant_reference (link:…). */
+            payment_link_description?: string;
             /**
              * @description Moyen de paiement : pays et opérateur (liste et état : GET /v1/rails).
              * @example sn_wave
@@ -2559,11 +2797,11 @@ export interface components {
              * @example 2500
              */
             amount: string;
-            attempt_id: string;
-            /** @enum {string|null} */
-            error_code: "provider_failed" | "expired" | null;
+            /** @description provider_failed ou expired ; null tant que la tentative n'a pas échoué. */
+            error_code: string | null;
             error_message: string | null;
-            reference_id: string;
+            /** @description Référence de la tentative chez l'opérateur. */
+            id: string;
             status: string;
         };
         PaymentCustomer: {
@@ -2585,18 +2823,11 @@ export interface components {
              * @description Page de paiement ; null quand l'opérateur ne donne qu'un QR code ou une consigne (voir next_action).
              */
             checkout_url: string | null;
-            /**
-             * Format: date-time
-             * @description Même valeur que created_at.
-             */
-            created: string;
             /** Format: date-time */
             created_at: string;
             /** @enum {string} */
             currency: "XOF";
             customer: components["schemas"]["PaymentCustomer"];
-            /** @description Même valeur que merchant_reference. */
-            description: string;
             /**
              * @description Remise accordée, avec offer_code.
              * @example 2500
@@ -2604,11 +2835,8 @@ export interface components {
             discount_amount?: string;
             /** @description Réservé : toujours vide. Les litiges sont sous GET /v1/disputes?payment_id=. */
             disputes: components["schemas"]["Dispute"][];
-            /**
-             * @description Présent quand le paiement a échoué ou expiré.
-             * @enum {string|null}
-             */
-            error_code: "provider_failed" | "expired" | null;
+            /** @description provider_failed ou expired ; null tant que le paiement n'a pas échoué. */
+            error_code: string | null;
             /** @description Texte de error_code, dans la langue de la requête. */
             error_message: string | null;
             /**
@@ -2623,15 +2851,7 @@ export interface components {
             id: string;
             /** @description true : objet du mode live ; false : mode test. */
             livemode: boolean;
-            /** @description Même valeur que merchant_reference. */
-            merchant_order_reference_id: string;
             merchant_reference: string;
-            /**
-             * @deprecated
-             * @description Présent seulement pour sn_wave et sn_orange. Utilisez rail.
-             * @enum {string}
-             */
-            method?: "wave" | "orange";
             /** Format: date-time */
             modified_at: string;
             /**
@@ -2639,11 +2859,6 @@ export interface components {
              * @example 2500
              */
             net: string | null;
-            /**
-             * @description Même valeur que net.
-             * @example 2500
-             */
-            net_amount: string | null;
             /** @description Ce que le client doit faire tant que le paiement est pending ; null sinon. */
             next_action: components["schemas"]["NextAction"];
             /** @description Présent si un code promo a été appliqué. */
@@ -2653,14 +2868,8 @@ export interface components {
              * @example 2500
              */
             original_amount?: string | null;
-            /**
-             * Format: uuid
-             * @description Même valeur que id.
-             * @example 0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10
-             */
-            payment_id: string;
-            /** @description wave ou orange_money pour le Sénégal, sinon l'identifiant du moyen de paiement. */
-            payment_method: string;
+            /** @description Présent pour un paiement fait sur un lien de paiement : la description du lien, à afficher à la place de merchant_reference (link:…). EN: present for a payment made on a payment link: the link's description, to show instead of merchant_reference (link:…). */
+            payment_link_description?: string;
             /**
              * @description Moyen de paiement : pays et opérateur (liste et état : GET /v1/rails).
              * @example sn_wave
@@ -2690,17 +2899,17 @@ export interface components {
             /** Format: date-time */
             expiry: string | null;
             /**
+             * Format: uuid
+             * @example 0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10
+             */
+            id: string;
+            /**
              * Format: uri
              * @description Page de paiement à partager : chaque visite crée un paiement.
              */
             link_to_pay: string;
             /** @description true : objet du mode live ; false : mode test. */
             livemode: boolean;
-            /**
-             * Format: uuid
-             * @example 0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10
-             */
-            payment_link_id: string;
             /** @enum {string} */
             status: "active" | "inactive" | "expired";
         };
@@ -2747,6 +2956,11 @@ export interface components {
             amount: string;
             /** @enum {string} */
             currency: "XOF";
+            /**
+             * @description Appareil du client. sn_orange : mobile (par défaut) ouvre l'app Max it, desktop donne un QR code à scanner (next_action de type qr). Sans effet sur les autres moyens. EN: the customer's device. sn_orange: mobile (default) opens the Max it app, desktop returns a QR code to scan (next_action of type qr). No effect on other rails.
+             * @enum {string}
+             */
+            customer_device?: "mobile" | "desktop";
             /** @description Code composé par le client. Requis seulement si otp_required vaut true pour le moyen de paiement, refusé sinon. */
             customer_otp?: string;
             /**
@@ -2759,12 +2973,6 @@ export interface components {
              * @example CMD-2026-0042
              */
             merchant_reference: string;
-            /**
-             * @deprecated
-             * @description Ancien nom des moyens du Sénégal. Utilisez rail ; si les deux sont donnés ils doivent désigner le même moyen.
-             * @enum {string}
-             */
-            method?: "wave" | "orange";
             /**
              * @description Code promo du projet (insensible à la casse).
              * @example BIENVENUE
@@ -2820,6 +3028,16 @@ export interface components {
              */
             destination_id: string;
             /**
+             * @description mobile : vers un numéro ; bank : virement bancaire, processing pendant 3 à 5 jours ouvrés.
+             * @enum {string}
+             */
+            destination_type: "mobile" | "bank";
+            /**
+             * @description Retrait refusé par l'opérateur : plafond du destinataire atteint, numéro ou compte invalide, ou indisponibilité. Aucun frais, le montant entier revient au solde. EN: why the operator refused the payout; no fee is charged and the whole amount returns to the balance.
+             * @enum {string}
+             */
+            failure_reason?: "destination_limit" | "destination_invalid" | "provider_unavailable";
+            /**
              * @description Montant en francs CFA entiers (XOF), écrit en chaîne de chiffres, sans espace ni décimale.
              * @example 2500
              */
@@ -2837,18 +3055,48 @@ export interface components {
              */
             net: string;
             /**
-             * @description Moyen de paiement : pays et opérateur (liste et état : GET /v1/rails).
+             * @description Numéro mobile seulement.
              * @example sn_wave
              * @enum {string}
              */
-            rail: "sn_wave" | "sn_orange" | "ci_wave" | "ci_orange" | "ci_mtn" | "ci_moov" | "bf_orange" | "bf_wave" | "bf_moov" | "tg_moov" | "tg_togocell" | "bj_moov" | "bj_mtn";
+            rail?: "sn_wave" | "sn_orange" | "ci_wave" | "ci_orange" | "ci_mtn" | "ci_moov" | "bf_orange" | "bf_wave" | "bf_moov" | "tg_moov" | "tg_togocell" | "bj_moov" | "bj_mtn";
+            /**
+             * Format: date-time
+             * @description Retrait en file : le numéro vient d'être vérifié, l'envoi part à partir de cette date.
+             */
+            release_at?: string;
             /**
              * @description État du retrait ; not_sent quand il a été refusé avant envoi. Pas une liste fermée : interrogez GET /v1/payouts/{id} jusqu'à un état final.
              * @example processing
              */
             status: string;
         };
+        PayoutDebit: {
+            /**
+             * @description Montant en francs CFA entiers (XOF), écrit en chaîne de chiffres, sans espace ni décimale.
+             * @example 2500
+             */
+            amount: string;
+            /**
+             * @description Moyen de paiement : pays et opérateur (liste et état : GET /v1/rails).
+             * @example sn_wave
+             * @enum {string}
+             */
+            rail: "sn_wave" | "sn_orange" | "ci_wave" | "ci_orange" | "ci_mtn" | "ci_moov" | "bf_orange" | "bf_wave" | "bf_moov" | "tg_moov" | "tg_togocell" | "bj_moov" | "bj_mtn";
+        };
         PayoutDestination: {
+            /**
+             * Format: date-time
+             * @description Numéro vérifié : un retrait demandé avant cette date (24 h après la vérification) attend en file.
+             */
+            available_at?: string;
+            /**
+             * @description Compte bancaire seulement.
+             * @example SN012
+             */
+            bank_code?: string;
+            /** @description Compte bancaire seulement. */
+            holder_name?: string;
             /**
              * Format: uuid
              * @example 0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10
@@ -2856,28 +3104,56 @@ export interface components {
             id: string;
             /** @description true : objet du mode live ; false : mode test. */
             livemode: boolean;
-            /** @example 4567 */
-            phone_last_digits: string;
             /**
-             * @description Moyen de paiement : pays et opérateur (liste et état : GET /v1/rails).
+             * @description Numéro mobile seulement.
+             * @example 4567
+             */
+            phone_last_digits?: string;
+            /**
+             * @description Numéro mobile seulement.
              * @example sn_wave
              * @enum {string}
              */
-            rail: "sn_wave" | "sn_orange" | "ci_wave" | "ci_orange" | "ci_mtn" | "ci_moov" | "bf_orange" | "bf_wave" | "bf_moov" | "tg_moov" | "tg_togocell" | "bj_moov" | "bj_mtn";
+            rail?: "sn_wave" | "sn_orange" | "ci_wave" | "ci_orange" | "ci_mtn" | "ci_moov" | "bf_orange" | "bf_wave" | "bf_moov" | "tg_moov" | "tg_togocell" | "bj_moov" | "bj_mtn";
+            /**
+             * @description Compte bancaire seulement : quatre derniers caractères du RIB.
+             * @example 0185
+             */
+            rib_last4?: string;
+            /** @enum {string} */
+            type: "mobile" | "bank";
+            /** @description Dernier code envoyé, tant que le numéro n'est pas vérifié. */
+            verification?: components["schemas"]["DestinationVerification"];
+            /** @description Vrai une fois le code à 6 chiffres saisi : devis et retraits refusent un numéro non vérifié. */
             verified: boolean;
         };
         PayoutDestinationRequest: {
             /**
+             * @description Titulaire du compte : 2 à 70 caractères, lettres, espaces, apostrophe, tiret et point. EN: account holder, 2 to 70 characters.
+             * @example Awa Ndiaye
+             */
+            holder_name?: string;
+            /**
              * @description Numéro mobile valide pour le pays du moyen de paiement.
              * @example +221771234567
              */
-            phone: string;
+            phone?: string;
             /**
              * @description Moyen de paiement : pays et opérateur (liste et état : GET /v1/rails).
              * @example sn_wave
              * @enum {string}
              */
-            rail: "sn_wave" | "sn_orange" | "ci_wave" | "ci_orange" | "ci_mtn" | "ci_moov" | "bf_orange" | "bf_wave" | "bf_moov" | "tg_moov" | "tg_togocell" | "bj_moov" | "bj_mtn";
+            rail?: "sn_wave" | "sn_orange" | "ci_wave" | "ci_orange" | "ci_mtn" | "ci_moov" | "bf_orange" | "bf_wave" | "bf_moov" | "tg_moov" | "tg_togocell" | "bj_moov" | "bj_mtn";
+            /**
+             * @description RIB UEMOA de 24 caractères, espaces acceptés : code banque (2 lettres, 3 chiffres), guichet (5 chiffres), compte (12), clé (2 chiffres) vérifiée. EN: 24-character UEMOA RIB, spaces accepted; the key is checked.
+             * @example SN012 01248 033212955901 85
+             */
+            rib?: string;
+            /**
+             * @description mobile par défaut : rail et phone ; bank : rib et holder_name.
+             * @enum {string}
+             */
+            type?: "mobile" | "bank";
         };
         PayoutPending: {
             /**
@@ -2887,6 +3163,11 @@ export interface components {
             id: string;
             /** @description true : objet du mode live ; false : mode test. */
             livemode: boolean;
+            /**
+             * Format: date-time
+             * @description Retrait en file : le numéro vient d'être vérifié, l'envoi part à partir de cette date.
+             */
+            release_at?: string;
             /** @example processing */
             status: string;
         };
@@ -2896,11 +3177,23 @@ export interface components {
              * @example 2500
              */
             amount: string;
+            /** @description Virement bancaire : part débitée de chaque solde (sn_wave, sn_orange), au prorata. EN: bank transfer: the part taken from each balance, pro rata. */
+            debits?: components["schemas"]["PayoutDebit"][];
+            /**
+             * @description Virement bancaire : traité à la main, 3 à 5 jours ouvrés. EN: bank transfer: processed by hand in 3 to 5 business days.
+             * @enum {string}
+             */
+            delay?: "3-5 business days";
             /**
              * Format: uuid
              * @example 0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10
              */
             destination_id: string;
+            /**
+             * @description bank : virement vers un compte bancaire (absent pour un numéro mobile).
+             * @enum {string}
+             */
+            destination_type?: "bank";
             /** Format: date-time */
             expires_at: string;
             /**
@@ -2908,21 +3201,26 @@ export interface components {
              * @example 2500
              */
             fee: string;
+            /**
+             * Format: int64
+             * @description Virement bancaire : taux du palier du montant, en points de base. EN: bank transfer: the amount's tier rate, in basis points.
+             */
+            fee_rate?: number;
             /** @description true : objet du mode live ; false : mode test. */
             livemode: boolean;
             /**
-             * @description Montant reçu sur le numéro.
+             * @description Montant reçu sur le numéro ou le compte.
              * @example 2500
              */
             net: string;
             /** @description À renvoyer dans POST /v1/payouts : à usage unique, valable jusqu'à expires_at. */
             quote_hash: string;
             /**
-             * @description Moyen de paiement : pays et opérateur (liste et état : GET /v1/rails).
+             * @description Numéro mobile seulement.
              * @example sn_wave
              * @enum {string}
              */
-            rail: "sn_wave" | "sn_orange" | "ci_wave" | "ci_orange" | "ci_mtn" | "ci_moov" | "bf_orange" | "bf_wave" | "bf_moov" | "tg_moov" | "tg_togocell" | "bj_moov" | "bj_mtn";
+            rail?: "sn_wave" | "sn_orange" | "ci_wave" | "ci_orange" | "ci_mtn" | "ci_moov" | "bf_orange" | "bf_wave" | "bf_moov" | "tg_moov" | "tg_togocell" | "bj_moov" | "bj_mtn";
         };
         PayoutQuoteRequest: {
             /**
@@ -2932,16 +3230,64 @@ export interface components {
             amount: string;
             /**
              * Format: uuid
-             * @description Numéro enregistré par POST /v1/payout-destinations, sur le même moyen de paiement.
+             * @description Numéro ou compte enregistré par POST /v1/payout-destinations, sur le même moyen de paiement.
              * @example 0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10
              */
             destination_id: string;
             /**
-             * @description Moyen de paiement : pays et opérateur (liste et état : GET /v1/rails).
+             * @description Requis pour un numéro mobile ; absent pour un compte bancaire.
              * @example sn_wave
              * @enum {string}
              */
-            rail: "sn_wave" | "sn_orange" | "ci_wave" | "ci_orange" | "ci_mtn" | "ci_moov" | "bf_orange" | "bf_wave" | "bf_moov" | "tg_moov" | "tg_togocell" | "bj_moov" | "bj_mtn";
+            rail?: "sn_wave" | "sn_orange" | "ci_wave" | "ci_orange" | "ci_mtn" | "ci_moov" | "bf_orange" | "bf_wave" | "bf_moov" | "tg_moov" | "tg_togocell" | "bj_moov" | "bj_mtn";
+        };
+        PayoutReceipt: {
+            /**
+             * @description Montant en francs CFA entiers (XOF), écrit en chaîne de chiffres, sans espace ni décimale.
+             * @example 2500
+             */
+            amount: string;
+            /**
+             * @description Quatre derniers caractères du numéro ou du RIB crédité.
+             * @example 4567
+             */
+            destination_last_digits: string;
+            /** @enum {string} */
+            destination_type: "mobile" | "bank";
+            /**
+             * @description Montant en francs CFA entiers (XOF), écrit en chaîne de chiffres, sans espace ni décimale.
+             * @example 2500
+             */
+            fee: string;
+            /**
+             * Format: uuid
+             * @description Référence 221 Pay du retrait.
+             * @example 0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10
+             */
+            id: string;
+            /** @description true : objet du mode live ; false : mode test. */
+            livemode: boolean;
+            /**
+             * @description Montant reçu sur le numéro ou le compte.
+             * @example 2500
+             */
+            net: string;
+            /**
+             * @description Numéro mobile seulement.
+             * @example sn_wave
+             * @enum {string}
+             */
+            rail?: "sn_wave" | "sn_orange" | "ci_wave" | "ci_orange" | "ci_mtn" | "ci_moov" | "bf_orange" | "bf_wave" | "bf_moov" | "tg_moov" | "tg_togocell" | "bj_moov" | "bj_mtn";
+            /**
+             * @description Nom du moyen de paiement (ou « Virement bancaire »), dans la langue de la requête.
+             * @example Wave
+             */
+            rail_label: string;
+            /**
+             * Format: date-time
+             * @description Date de réussite, en UTC : l'heure de Dakar.
+             */
+            succeeded_at: string;
         };
         PayoutRequest: {
             quote_hash: string;
@@ -3118,7 +3464,7 @@ export interface components {
             enabled: boolean;
         };
         Rattachement: {
-            arrondissement: components["schemas"]["Lieu"];
+            arrondissement: components["schemas"]["Lieu"] | null;
             avertissements: string[] | null;
             /** @description Commune dont le contour OpenStreetMap (ODbL, non officiel) contient le point ; null hors des contours appariés. */
             commune: components["schemas"]["Lieu"];
@@ -3162,6 +3508,11 @@ export interface components {
             fee: string;
             /** @enum {string} */
             fee_payer: "merchant" | "customer";
+            /**
+             * Format: uuid
+             * @example 0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10
+             */
+            id: string;
             /** @description true : objet du mode live ; false : mode test. */
             livemode: boolean;
             /**
@@ -3176,11 +3527,6 @@ export interface components {
             payment_id: string;
             /** @enum {string} */
             reason: "customer_request" | "duplicate" | "product_not_delivered" | "other_documented";
-            /**
-             * Format: uuid
-             * @example 0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10
-             */
-            refund_id: string;
             /** @enum {string} */
             status: "requested" | "processing" | "succeeded" | "failed" | "unknown";
             /** Format: date-time */
@@ -3209,6 +3555,11 @@ export interface components {
             /** @enum {string} */
             fee_payer: "merchant" | "customer";
             /**
+             * Format: uuid
+             * @example 0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10
+             */
+            id: string;
+            /**
              * @description Montant en francs CFA entiers (XOF), écrit en chaîne de chiffres, sans espace ni décimale.
              * @example 2500
              */
@@ -3220,11 +3571,6 @@ export interface components {
             payment_id: string;
             /** @enum {string} */
             reason: "customer_request" | "duplicate" | "product_not_delivered" | "other_documented";
-            /**
-             * Format: uuid
-             * @example 0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10
-             */
-            refund_id: string;
             /** @enum {string} */
             status: "requested" | "processing" | "succeeded" | "failed" | "unknown";
             /** Format: date-time */
@@ -3416,7 +3762,7 @@ export interface components {
         Suivi: {
             active: boolean;
             /** Format: date-time */
-            created_at: string;
+            created_at: string | null;
             dataset: string;
         };
         SuiviLigne: {
@@ -3448,7 +3794,7 @@ export interface components {
         };
         WebhookAttempt: {
             /** Format: date-time */
-            created: string;
+            created_at: string;
             /**
              * Format: int32
              * @description Numéro de l'essai, à partir de 1.
@@ -3468,22 +3814,21 @@ export interface components {
         };
         WebhookEvent: {
             /** Format: date-time */
-            created: string;
+            created_at: string;
             /** @enum {string} */
             event_class: "payments" | "payouts" | "refunds" | "disputes";
             /** @example evt_0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10 */
-            event_id: string;
-            /**
-             * @description Liste : GET /v1/webhook-event-types.
-             * @example payment.succeeded
-             */
-            event_type: string;
+            id: string;
             initial_attempt_id: string | null;
             is_delivery_successful: boolean;
             merchant_id: string;
             /** @description Identifiant du paiement, retrait, remboursement ou litige concerné. */
             object_id: string | null;
-            profile_id: string;
+            /**
+             * @description Liste : GET /v1/webhook-event-types.
+             * @example payment.succeeded
+             */
+            type: string;
         };
         WebhookEventList: {
             events: components["schemas"]["WebhookEvent"][];
@@ -3750,6 +4095,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -3759,6 +4111,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -3768,6 +4127,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -3779,6 +4145,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -3788,6 +4161,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -3797,6 +4177,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4037,6 +4424,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4046,6 +4440,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4055,6 +4456,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4066,6 +4474,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4075,6 +4490,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4084,6 +4506,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4125,6 +4554,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4134,6 +4570,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4143,6 +4586,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4152,6 +4602,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "NOT_FOUND",
+                     *       "message": "Ressource introuvable.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4163,6 +4620,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4172,6 +4636,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4181,6 +4652,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4417,7 +4895,7 @@ export interface operations {
                 limit?: string;
                 offset?: string;
                 payment_id?: string;
-                dispute_status?: string;
+                status?: string;
                 from?: string;
                 to?: string;
             };
@@ -4449,6 +4927,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4458,6 +4943,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4467,6 +4959,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4478,6 +4977,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4487,6 +4993,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4496,6 +5009,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4539,6 +5059,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4548,6 +5075,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4557,6 +5091,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4566,6 +5107,45 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "NOT_FOUND",
+                     *       "message": "Ressource introuvable.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Codes possibles : INVALID_STATE. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_STATE",
+                     *       "message": "Opération en conflit.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Codes possibles : REQUEST_TOO_LARGE. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "REQUEST_TOO_LARGE",
+                     *       "message": "Corps de requête limité à 1 Mio.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4577,6 +5157,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4586,6 +5173,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4595,6 +5189,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4636,6 +5237,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4645,6 +5253,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4654,6 +5269,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4663,6 +5285,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "NOT_FOUND",
+                     *       "message": "Ressource introuvable.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4674,6 +5303,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4683,6 +5319,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4692,6 +5335,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4733,6 +5383,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4742,6 +5399,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4751,6 +5415,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4760,6 +5431,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "NOT_FOUND",
+                     *       "message": "Ressource introuvable.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4769,6 +5447,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_STATE",
+                     *       "message": "Opération en conflit.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4780,6 +5465,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4789,6 +5481,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4798,6 +5497,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4844,6 +5550,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4853,6 +5566,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4862,6 +5582,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4871,6 +5598,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "NOT_FOUND",
+                     *       "message": "Ressource introuvable.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4880,6 +5614,29 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_STATE",
+                     *       "message": "Opération en conflit.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Codes possibles : REQUEST_TOO_LARGE. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "REQUEST_TOO_LARGE",
+                     *       "message": "Corps de requête limité à 1 Mio.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4891,6 +5648,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4900,6 +5664,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4909,6 +5680,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4955,6 +5733,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4964,6 +5749,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4973,6 +5765,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4982,6 +5781,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "NOT_FOUND",
+                     *       "message": "Ressource introuvable.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -4991,6 +5797,29 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_STATE",
+                     *       "message": "Opération en conflit.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Codes possibles : REQUEST_TOO_LARGE. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "REQUEST_TOO_LARGE",
+                     *       "message": "Corps de requête limité à 1 Mio.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -5002,6 +5831,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -5011,6 +5847,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -5020,6 +5863,141 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+        };
+    };
+    feesGet: {
+        parameters: {
+            query?: {
+                project_id?: string;
+                lang?: string;
+            };
+            header?: {
+                Authorization?: string;
+                "X-API-Key"?: string;
+                Cookie?: string;
+                "X-221-External-Ref"?: string;
+                "X-221-Project-Id"?: string;
+                "Accept-Language"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Frais publics : paliers et limites des virements bancaires. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Fees"];
+                };
+            };
+            /** @description Codes possibles : INVALID_REQUEST, PROJECT_REQUIRED. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Codes possibles : UNAUTHENTICATED, INVALID_API_KEY. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Codes possibles : MISSING_SCOPE, LIVE_NOT_ENABLED. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Codes possibles : RATE_LIMITED. */
+            429: {
+                headers: {
+                    /** @description Secondes à attendre avant de réessayer. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Codes possibles : PAYMENTS_UNAVAILABLE, CHANNEL_UNAVAILABLE. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Erreur inattendue (500) : même corps. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -5145,6 +6123,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LieuDetail"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    previewInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApercuInvitation"];
                 };
             };
             /** @description Error */
@@ -5393,6 +6402,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -5402,6 +6418,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -5411,6 +6434,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -5422,6 +6452,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -5431,6 +6468,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -5440,6 +6484,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -5492,6 +6543,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -5501,6 +6559,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -5510,6 +6575,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -5519,6 +6591,29 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "KYC_ALREADY_SUBMITTED",
+                     *       "message": "Opération en conflit.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Codes possibles : REQUEST_TOO_LARGE. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "REQUEST_TOO_LARGE",
+                     *       "message": "Corps de requête limité à 1 Mio.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -5530,6 +6625,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -5539,6 +6641,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -5548,6 +6657,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "STORAGE_FULL",
+                     *       "message": "Stockage indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -5557,6 +6673,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -5596,6 +6719,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -5605,6 +6735,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -5614,6 +6751,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -5623,6 +6767,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "KYC_ALREADY_SUBMITTED",
+                     *       "message": "Opération en conflit.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -5634,6 +6785,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -5643,6 +6801,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -5652,6 +6817,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "STORAGE_FULL",
+                     *       "message": "Stockage indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -5661,6 +6833,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -5700,6 +6879,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -5709,6 +6895,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -5718,6 +6911,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -5729,6 +6929,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -5738,6 +6945,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -5747,6 +6961,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -5786,6 +7007,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -5795,6 +7023,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -5804,6 +7039,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -5813,6 +7055,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "KYC_ALREADY_SUBMITTED",
+                     *       "message": "Opération en conflit.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -5824,6 +7073,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -5833,6 +7089,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -5842,6 +7105,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "STORAGE_FULL",
+                     *       "message": "Stockage indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -5851,6 +7121,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6036,6 +7313,35 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getCleAppelante: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CleAppelante"];
+                };
             };
             /** @description Error */
             default: {
@@ -6267,7 +7573,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                question: "connu" | "profil" | "specialite" | "fin";
+                question: "connu" | "profil" | "specialite" | "fin" | "flow_account" | "flow_project" | "flow_key" | "flow_first_request";
             };
             cookie?: never;
         };
@@ -6363,6 +7669,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6372,6 +7685,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6381,6 +7701,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6390,6 +7717,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "FEATURE_DISABLED",
+                     *       "message": "Fonction indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6401,6 +7735,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6410,6 +7751,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6419,6 +7767,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6462,6 +7817,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6471,6 +7833,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6480,6 +7849,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6489,6 +7865,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "FEATURE_DISABLED",
+                     *       "message": "Fonction indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6498,6 +7881,29 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "OFFER_CODE_TAKEN",
+                     *       "message": "Opération en conflit.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Codes possibles : REQUEST_TOO_LARGE. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "REQUEST_TOO_LARGE",
+                     *       "message": "Corps de requête limité à 1 Mio.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6509,6 +7915,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6518,6 +7931,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6527,6 +7947,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6568,6 +7995,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6577,6 +8011,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6586,6 +8027,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6595,6 +8043,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "FEATURE_DISABLED",
+                     *       "message": "Fonction indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6606,6 +8061,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6615,6 +8077,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6624,6 +8093,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6665,6 +8141,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6674,6 +8157,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6683,6 +8173,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6692,6 +8189,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "FEATURE_DISABLED",
+                     *       "message": "Fonction indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6703,6 +8207,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6712,6 +8223,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6721,6 +8239,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6766,6 +8291,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6775,6 +8307,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6784,6 +8323,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6793,6 +8339,29 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "FEATURE_DISABLED",
+                     *       "message": "Fonction indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Codes possibles : REQUEST_TOO_LARGE. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "REQUEST_TOO_LARGE",
+                     *       "message": "Corps de requête limité à 1 Mio.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6804,6 +8373,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6813,6 +8389,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6822,6 +8405,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6935,6 +8525,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6944,6 +8541,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6953,6 +8557,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6964,6 +8575,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6973,6 +8591,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -6982,6 +8607,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7025,6 +8657,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7034,6 +8673,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7043,6 +8689,29 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Codes possibles : REQUEST_TOO_LARGE. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "REQUEST_TOO_LARGE",
+                     *       "message": "Corps de requête limité à 1 Mio.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7054,6 +8723,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7063,6 +8739,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7072,6 +8755,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7113,6 +8803,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7122,6 +8819,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7131,6 +8835,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7140,6 +8851,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "NOT_FOUND",
+                     *       "message": "Ressource introuvable.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7151,6 +8869,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7160,6 +8885,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7169,6 +8901,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7214,6 +8953,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7223,6 +8969,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7232,6 +8985,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7241,6 +9001,29 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "NOT_FOUND",
+                     *       "message": "Ressource introuvable.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Codes possibles : REQUEST_TOO_LARGE. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "REQUEST_TOO_LARGE",
+                     *       "message": "Corps de requête limité à 1 Mio.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7252,6 +9035,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7261,6 +9051,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7270,6 +9067,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7319,6 +9123,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7328,6 +9139,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7337,6 +9155,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7348,6 +9173,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7357,6 +9189,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7366,6 +9205,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7414,12 +9260,28 @@ export interface operations {
                     "application/json": components["schemas"]["Payment"];
                 };
             };
+            /** @description Le résultat de la création chez l'opérateur est inconnu. Relisez le paiement avant toute nouvelle tentative. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Payment"];
+                };
+            };
             /** @description Codes possibles : INVALID_REQUEST, PROJECT_REQUIRED, OFFER_INVALID. */
             400: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7429,6 +9291,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7438,6 +9307,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7447,6 +9323,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "FEATURE_DISABLED",
+                     *       "message": "Fonction indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7456,6 +9339,29 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "IDEMPOTENCY_CONFLICT",
+                     *       "message": "Opération en conflit.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Codes possibles : REQUEST_TOO_LARGE. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "REQUEST_TOO_LARGE",
+                     *       "message": "Corps de requête limité à 1 Mio.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7467,6 +9373,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7476,6 +9389,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7485,6 +9405,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7556,6 +9483,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7565,6 +9499,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7574,6 +9515,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7583,6 +9531,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "NOT_FOUND",
+                     *       "message": "Ressource introuvable.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7594,6 +9549,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7603,6 +9565,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7612,6 +9581,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7651,6 +9627,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7660,6 +9643,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7669,6 +9659,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7680,6 +9677,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7689,6 +9693,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7698,6 +9709,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7750,6 +9768,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7759,6 +9784,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7768,6 +9800,29 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Codes possibles : REQUEST_TOO_LARGE. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "REQUEST_TOO_LARGE",
+                     *       "message": "Corps de requête limité à 1 Mio.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7779,6 +9834,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7788,6 +9850,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7797,6 +9866,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7836,6 +9912,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7845,6 +9928,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7854,6 +9944,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7863,6 +9960,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "NOT_FOUND",
+                     *       "message": "Ressource introuvable.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7874,6 +9978,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7883,6 +9994,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7892,6 +10010,357 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+        };
+    };
+    payoutDestinationsResend: {
+        parameters: {
+            query?: {
+                project_id?: string;
+                lang?: string;
+            };
+            header?: {
+                Authorization?: string;
+                "X-API-Key"?: string;
+                Cookie?: string;
+                "X-221-External-Ref"?: string;
+                "X-221-Project-Id"?: string;
+                "Accept-Language"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Nouveau code envoyé par e-mail, valable 10 minutes ; trois par heure au plus. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayoutDestination"];
+                };
+            };
+            /** @description Codes possibles : INVALID_REQUEST, PROJECT_REQUIRED. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Codes possibles : UNAUTHENTICATED, INVALID_API_KEY. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Codes possibles : MISSING_SCOPE, LIVE_NOT_ENABLED, FORBIDDEN. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Codes possibles : NOT_FOUND. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "NOT_FOUND",
+                     *       "message": "Ressource introuvable.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Codes possibles : INVALID_STATE. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_STATE",
+                     *       "message": "Opération en conflit.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Codes possibles : RATE_LIMITED. */
+            429: {
+                headers: {
+                    /** @description Secondes à attendre avant de réessayer. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Codes possibles : PAYMENTS_UNAVAILABLE, CHANNEL_UNAVAILABLE. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Erreur inattendue (500) : même corps. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+        };
+    };
+    payoutDestinationsVerify: {
+        parameters: {
+            query?: {
+                project_id?: string;
+                lang?: string;
+            };
+            header?: {
+                Authorization?: string;
+                "X-API-Key"?: string;
+                Cookie?: string;
+                "X-221-External-Ref"?: string;
+                "X-221-Project-Id"?: string;
+                "Accept-Language"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DestinationCodeRequest"];
+            };
+        };
+        responses: {
+            /** @description Numéro vérifié ; premier retrait possible à partir de available_at (24 h). En mode test, le code 000000 est aussi accepté. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayoutDestination"];
+                };
+            };
+            /** @description Codes possibles : INVALID_REQUEST, PROJECT_REQUIRED, INVALID_CODE. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Codes possibles : UNAUTHENTICATED, INVALID_API_KEY. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Codes possibles : MISSING_SCOPE, LIVE_NOT_ENABLED, FORBIDDEN. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Codes possibles : NOT_FOUND. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "NOT_FOUND",
+                     *       "message": "Ressource introuvable.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Codes possibles : CODE_EXPIRED. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "CODE_EXPIRED",
+                     *       "message": "Code expiré.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Codes possibles : REQUEST_TOO_LARGE. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "REQUEST_TOO_LARGE",
+                     *       "message": "Corps de requête limité à 1 Mio.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Codes possibles : RATE_LIMITED, TOO_MANY_ATTEMPTS. */
+            429: {
+                headers: {
+                    /** @description Secondes à attendre avant de réessayer. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Codes possibles : PAYMENTS_UNAVAILABLE, CHANNEL_UNAVAILABLE. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Erreur inattendue (500) : même corps. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7929,12 +10398,19 @@ export interface operations {
                     "application/json": components["schemas"]["PayoutQuote"];
                 };
             };
-            /** @description Codes possibles : INVALID_REQUEST, PROJECT_REQUIRED. */
+            /** @description Codes possibles : INVALID_REQUEST, PROJECT_REQUIRED, BELOW_MINIMUM, ABOVE_MAXIMUM. */
             400: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7944,15 +10420,61 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
-            /** @description Codes possibles : MISSING_SCOPE, LIVE_NOT_ENABLED, FORBIDDEN. */
+            /** @description Codes possibles : MISSING_SCOPE, LIVE_NOT_ENABLED, WITHDRAWAL_LIMIT_EXCEEDED, MONTHLY_LIMIT_REACHED, FORBIDDEN. */
             403: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Codes possibles : DESTINATION_NOT_VERIFIED, INSUFFICIENT_FUNDS. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "DESTINATION_NOT_VERIFIED",
+                     *       "message": "Opération en conflit.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Codes possibles : REQUEST_TOO_LARGE. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "REQUEST_TOO_LARGE",
+                     *       "message": "Corps de requête limité à 1 Mio.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7964,6 +10486,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7973,6 +10502,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -7982,6 +10518,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -8021,6 +10564,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -8030,6 +10580,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -8039,6 +10596,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -8050,6 +10614,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -8059,6 +10630,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -8068,6 +10646,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -8116,12 +10701,19 @@ export interface operations {
                     "application/json": components["schemas"]["PayoutPending"];
                 };
             };
-            /** @description Codes possibles : INVALID_REQUEST, PROJECT_REQUIRED. */
+            /** @description Codes possibles : INVALID_REQUEST, PROJECT_REQUIRED, BELOW_MINIMUM, ABOVE_MAXIMUM. */
             400: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -8131,24 +10723,61 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
-            /** @description Codes possibles : MISSING_SCOPE, LIVE_NOT_ENABLED, KYC_REQUIRED, MERCHANT_SUSPENDED, MERCHANT_LIMIT_EXCEEDED, FORBIDDEN. */
+            /** @description Codes possibles : MISSING_SCOPE, LIVE_NOT_ENABLED, KYC_REQUIRED, MERCHANT_SUSPENDED, MERCHANT_LIMIT_EXCEEDED, WITHDRAWAL_LIMIT_EXCEEDED, MONTHLY_LIMIT_REACHED, FORBIDDEN. */
             403: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
-            /** @description Codes possibles : IDEMPOTENCY_CONFLICT, INSUFFICIENT_FUNDS. */
+            /** @description Codes possibles : IDEMPOTENCY_CONFLICT, QUOTE_EXPIRED, QUOTE_INVALID, INSUFFICIENT_FUNDS, DESTINATION_NOT_VERIFIED. */
             409: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "IDEMPOTENCY_CONFLICT",
+                     *       "message": "Opération en conflit.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Codes possibles : REQUEST_TOO_LARGE. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "REQUEST_TOO_LARGE",
+                     *       "message": "Corps de requête limité à 1 Mio.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -8160,6 +10789,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -8169,6 +10805,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -8178,6 +10821,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -8219,6 +10869,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -8228,6 +10885,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -8237,6 +10901,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -8246,6 +10917,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "NOT_FOUND",
+                     *       "message": "Ressource introuvable.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -8257,6 +10935,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -8266,6 +10951,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -8275,6 +10967,159 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+        };
+    };
+    payoutsReceipt: {
+        parameters: {
+            query?: {
+                project_id?: string;
+                lang?: string;
+            };
+            header?: {
+                Authorization?: string;
+                "X-API-Key"?: string;
+                Cookie?: string;
+                "X-221-External-Ref"?: string;
+                "X-221-Project-Id"?: string;
+                "Accept-Language"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Reçu d'un retrait réussi ; NOT_FOUND tant que le retrait n'a pas réussi. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PayoutReceipt"];
+                };
+            };
+            /** @description Codes possibles : INVALID_REQUEST, PROJECT_REQUIRED. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Codes possibles : UNAUTHENTICATED, INVALID_API_KEY. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Codes possibles : MISSING_SCOPE, LIVE_NOT_ENABLED. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Codes possibles : NOT_FOUND. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "NOT_FOUND",
+                     *       "message": "Ressource introuvable.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Codes possibles : RATE_LIMITED. */
+            429: {
+                headers: {
+                    /** @description Secondes à attendre avant de réessayer. */
+                    "Retry-After"?: number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Codes possibles : PAYMENTS_UNAVAILABLE, CHANNEL_UNAVAILABLE. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Erreur inattendue (500) : même corps. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -8918,6 +11763,39 @@ export interface operations {
             };
         };
     };
+    testWebhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Identifiant du projet. */
+                id: string;
+                subscriptionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnvoiTest"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     railsList: {
         parameters: {
             query?: {
@@ -8952,6 +11830,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -8961,6 +11846,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -8970,6 +11862,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -8981,6 +11880,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -8990,6 +11896,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -8999,6 +11912,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9044,6 +11964,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9053,6 +11980,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9062,6 +11996,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9071,6 +12012,29 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "NOT_FOUND",
+                     *       "message": "Ressource introuvable.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Codes possibles : REQUEST_TOO_LARGE. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "REQUEST_TOO_LARGE",
+                     *       "message": "Corps de requête limité à 1 Mio.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9082,6 +12046,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9091,6 +12062,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9100,6 +12078,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9143,6 +12128,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9152,6 +12144,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9161,6 +12160,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9170,6 +12176,29 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "NOT_FOUND",
+                     *       "message": "Ressource introuvable.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Codes possibles : REQUEST_TOO_LARGE. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "REQUEST_TOO_LARGE",
+                     *       "message": "Corps de requête limité à 1 Mio.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9181,6 +12210,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9190,6 +12226,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9199,6 +12242,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9244,6 +12294,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9253,6 +12310,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9262,6 +12326,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9273,6 +12344,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9282,6 +12360,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9291,6 +12376,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9345,6 +12437,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9354,6 +12453,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9363,6 +12469,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9372,15 +12485,45 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "NOT_FOUND",
+                     *       "message": "Ressource introuvable.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
-            /** @description Codes possibles : IDEMPOTENCY_CONFLICT, INSUFFICIENT_FUNDS. */
+            /** @description Codes possibles : IDEMPOTENCY_CONFLICT, QUOTE_EXPIRED, QUOTE_INVALID, INSUFFICIENT_FUNDS. */
             409: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "IDEMPOTENCY_CONFLICT",
+                     *       "message": "Opération en conflit.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Codes possibles : REQUEST_TOO_LARGE. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "REQUEST_TOO_LARGE",
+                     *       "message": "Corps de requête limité à 1 Mio.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9392,6 +12535,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9401,6 +12551,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9410,6 +12567,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9451,6 +12615,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9460,6 +12631,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9469,6 +12647,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9478,6 +12663,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "NOT_FOUND",
+                     *       "message": "Ressource introuvable.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9489,6 +12681,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9498,6 +12697,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9507,6 +12713,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9613,6 +12826,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9622,6 +12842,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9631,6 +12858,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9642,6 +12876,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9651,6 +12892,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9660,6 +12908,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9703,6 +12958,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9712,6 +12974,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9721,6 +12990,29 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PayError"];
+                };
+            };
+            /** @description Codes possibles : REQUEST_TOO_LARGE. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "code": "REQUEST_TOO_LARGE",
+                     *       "message": "Corps de requête limité à 1 Mio.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9732,6 +13024,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9741,6 +13040,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9750,6 +13056,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9780,8 +13093,26 @@ export interface operations {
                     "application/json": components["schemas"]["Signalement"];
                 };
             };
-            /** @description Error */
-            default: {
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9811,8 +13142,26 @@ export interface operations {
                     "application/json": components["schemas"]["Signalement"];
                 };
             };
-            /** @description Error */
-            default: {
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9983,6 +13332,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -9992,6 +13348,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -10001,6 +13364,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -10012,6 +13382,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -10021,6 +13398,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -10030,6 +13414,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -10071,6 +13462,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -10080,6 +13478,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -10089,6 +13494,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -10098,6 +13510,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "NOT_FOUND",
+                     *       "message": "Ressource introuvable.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -10109,6 +13528,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -10118,6 +13544,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -10127,6 +13560,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -10168,6 +13608,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INVALID_REQUEST",
+                     *       "message": "Requête invalide.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -10177,6 +13624,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "UNAUTHENTICATED",
+                     *       "message": "Authentification requise.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -10186,6 +13640,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "MISSING_SCOPE",
+                     *       "message": "Accès refusé.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -10195,6 +13656,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "NOT_FOUND",
+                     *       "message": "Ressource introuvable.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -10206,6 +13674,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "RATE_LIMITED",
+                     *       "message": "Trop de requêtes.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -10215,6 +13690,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "PAYMENTS_UNAVAILABLE",
+                     *       "message": "Service temporairement indisponible.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
@@ -10224,6 +13706,13 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "code": "INTERNAL_ERROR",
+                     *       "message": "Erreur interne.",
+                     *       "request_id": "0d8f6c1e-3b0a-4c58-9a57-2f1f0f4b8f10"
+                     *     }
+                     */
                     "application/json": components["schemas"]["PayError"];
                 };
             };
