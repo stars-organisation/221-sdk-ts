@@ -1,5 +1,7 @@
 # SDK TypeScript 221
 
+Paiements Wave et Orange Money par API : [221 Pay](https://221.orvlabs.com/pay).
+
 Client typé de l'API 221 (EF-221-02), vérification des signatures de webhook,
 données de référence hors ligne (EF-221-03), modules « paquet » `telephonie` et
 `monnaie`. Site et documentation : <https://221.orvlabs.com/documentation>. Les types
@@ -20,7 +22,6 @@ le résultat.
 npm install @orvlabs/sdk-221
 ```
 
-Pas encore publié sur npm : la commande fonctionnera à la publication.
 
 ## Développement
 
